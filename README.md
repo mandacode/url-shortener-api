@@ -63,3 +63,31 @@ avoided: the unique constraint rejects the duplicate and the service draws again
 `secrets` rather than `random` is load-bearing. `random` is deterministic and its state
 can be reconstructed from enough observed output, which would reintroduce exactly the
 predictability I rejected base62 to avoid.
+
+### The repository boundary is what makes the unit tests real
+
+`ShortenerService` depends on a `LinkRepository` protocol rather than on the ORM. The
+Django implementation satisfies it structurally, so there is no base class and no
+container. The payoff shows up in the tests: service behaviour, including the retry path,
+runs against an in-memory fake with no database, which is what makes the split between
+unit and end-to-end tests meaningful instead of cosmetic.
+
+Only the repository is injected. `generate_code` is a pure function with no state and no
+I/O, so hiding it behind an abstraction would be indirection for its own sake.
+
+### Collisions are settled by the database, not by a lookup
+
+Generating a code and checking whether it is taken before inserting is a time-of-check to
+time-of-use race: two workers can both see it as free and both insert. Only the unique
+constraint sees uncommitted writes from other transactions, so the service inserts
+optimistically and catches `IntegrityError`.
+
+Each attempt sits in its own `transaction.atomic()` block. Django marks a transaction as
+needing rollback once an `IntegrityError` escapes it, so a loop wrapped in one outer
+atomic block would fail on the second attempt with `TransactionManagementError`. The
+inner block is a savepoint that rolls back on its own and leaves the outer transaction
+usable.
+
+Attempts are capped at five. At this scale the retry path should never run, so the cap is
+not there for collisions but for my own mistakes: a broken generator would otherwise spin
+forever instead of surfacing.
