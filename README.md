@@ -11,6 +11,15 @@ Those notes are in [Decisions](#decisions).
 
 Python 3.12 · Django 5.2 LTS · Django REST Framework · PostgreSQL · Docker Compose
 
+## Running
+
+```bash
+docker compose up --build
+```
+
+The API is available at `http://localhost:8000`. Migrations run on startup and
+PostgreSQL data persists in a named volume.
+
 ## Decisions
 
 Recorded as the project progresses, each one at the point it was made.

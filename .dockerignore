@@ -1,0 +1,7 @@
+.venv/
+.git/
+.idea/
+__pycache__/
+.env
+.ruff_cache/
+.pytest_cache/
