@@ -144,3 +144,16 @@ The collision path is covered by a repository that refuses the first N codes. A 
 cannot be tested reliably, since a threaded test passes or fails on timing, so it is split
 in two: the retry logic here, and the existence of the unique constraint in the
 end-to-end tests.
+
+### End-to-end tests go through the whole stack
+
+`tests/e2e` drives the real URL routing, serializers, service, repository and PostgreSQL
+with DRF's `APIClient`. Between them the cases cover both operations the requirements ask
+for, the redirect, the two rejection paths for bad input, and the fact that one URL
+submitted twice produces two codes that both resolve.
+
+One case does not touch the API at all: it inserts the same code twice through the ORM and
+expects an `IntegrityError`. A `UniqueConstraint` declared on a model guarantees nothing
+until a migration applies it, so this asserts that the constraint is really in the
+database. Together with the retry test in `tests/unit`, that covers both halves of the
+concurrency story without a flaky threaded test.
