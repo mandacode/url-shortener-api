@@ -20,6 +20,16 @@ docker compose up --build
 The API is available at `http://localhost:8000`. Migrations run on startup and
 PostgreSQL data persists in a named volume.
 
+## API
+
+| Method | Path | Result |
+|---|---|---|
+| POST | `/api/v1/links/` | 201 with `code`, `short_url` and `url` |
+| GET | `/api/v1/links/{code}/` | 200 with the same shape, 404 if unknown |
+| GET | `/shrt/{code}` | 302 to the original address, 404 if unknown |
+
+Browsable documentation is at `/api/docs/` and the OpenAPI schema at `/api/schema/`.
+
 ## Decisions
 
 ### Duplicate URLs get separate links
@@ -157,3 +167,12 @@ expects an `IntegrityError`. A `UniqueConstraint` declared on a model guarantees
 until a migration applies it, so this asserts that the constraint is really in the
 database. Together with the retry test in `tests/unit`, that covers both halves of the
 concurrency story without a flaky threaded test.
+
+### The schema is generated, not written
+
+`drf-spectacular` builds the OpenAPI document from the serializers and the URL patterns,
+so the documentation cannot drift away from the code. The two views are plain `APIView`
+classes, which carry no serializer attribute to infer from, so each one declares its
+request and response shapes explicitly, error responses included. An end-to-end test
+requests the schema, because it is generated at runtime and a broken annotation would
+otherwise stay unnoticed until somebody opened the docs.

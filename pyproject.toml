@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "Django==5.2.17",
     "djangorestframework==3.18.1",
+    "drf-spectacular==0.30.0",
     "psycopg[binary,pool]==3.3.5",
 ]
 

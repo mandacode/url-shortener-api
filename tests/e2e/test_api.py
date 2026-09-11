@@ -64,3 +64,7 @@ def test_the_database_rejects_a_duplicate_code() -> None:
     with pytest.raises(IntegrityError):
         with transaction.atomic():
             Link.objects.create(code="abc1234", url=TARGET)
+
+
+def test_the_openapi_schema_is_served(api_client: APIClient) -> None:
+    assert api_client.get("/api/schema/").status_code == 200

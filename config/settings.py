@@ -14,6 +14,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.staticfiles",
     "rest_framework",
+    "drf_spectacular",
     "shortener",
 ]
 
@@ -64,3 +65,19 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "URL Shortener API",
+    "DESCRIPTION": (
+        "Create short links and resolve them back to the original address. "
+        "The short links themselves are served at /shrt/{code} and answer with a "
+        "302 redirect; that route is not a REST endpoint and is not part of this "
+        "schema."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}
