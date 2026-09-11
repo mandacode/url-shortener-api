@@ -22,3 +22,10 @@ repos:
         entry: uv run ruff format
         language: system
         types: [python]
+
+      - id: mypy
+        name: mypy
+        entry: uv run mypy config shortener manage.py
+        language: system
+        types: [ python ]
+        pass_filenames: false

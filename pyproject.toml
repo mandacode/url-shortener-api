@@ -10,6 +10,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "django-stubs==6.1.0",
+    "djangorestframework-stubs==3.18.1",
+    "mypy==2.3.1",
     "pre-commit==4.6.2",
     "pytest==9.1.1",
     "pytest-django==4.14.0",
@@ -26,3 +29,20 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "*.migrations.*"
+ignore_errors = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings"
