@@ -9,16 +9,17 @@ Those notes are in [Decisions](#decisions).
 
 ## Stack
 
-Python 3.12 · Django 5.2 LTS · Django REST Framework · PostgreSQL · Docker Compose
+Python 3.12, Django 5.2 LTS, Django REST Framework, PostgreSQL, Docker Compose.
 
 ## Running
 
 ```bash
+cp .env.example .env
 docker compose up --build
 ```
 
-The API is available at `http://localhost:8000`. Migrations run on startup and
-PostgreSQL data persists in a named volume.
+The API is available at `http://localhost:8000`. Migrations run on startup and PostgreSQL
+data persists in a named volume.
 
 ## API
 
@@ -29,6 +30,50 @@ PostgreSQL data persists in a named volume.
 | GET | `/shrt/{code}` | 302 to the original address, 404 if unknown |
 
 Browsable documentation is at `/api/docs/` and the OpenAPI schema at `/api/schema/`.
+
+## Tests and checks
+
+Unit tests need nothing but the virtualenv, because the service runs against an in-memory
+repository:
+
+```bash
+uv run pytest tests/unit
+```
+
+End-to-end tests go through PostgreSQL, so they run inside the container. This command
+runs the whole suite:
+
+```bash
+docker compose exec api pytest tests
+```
+
+Linting and type checking:
+
+```bash
+uv run ruff check .
+uv run mypy config shortener tests manage.py
+```
+
+Both run on every commit through pre-commit. `mypy` is configured with
+`disallow_untyped_defs`, so every function in this repository carries annotations and a
+missing one fails the commit instead of being caught in review.
+
+## Layout
+
+```
+config/              settings and root URLs
+shortener/
+  codes.py           short code generation
+  models.py          Link
+  repositories.py    LinkRepository protocol and the database implementation
+  services.py        ShortenerService, retry on collision
+  dependencies.py    wires the service together
+  views.py           the redirect
+  api/               serializers, API views, API URLs
+tests/
+  unit/              no database
+  e2e/               full stack on PostgreSQL
+```
 
 ## Decisions
 
@@ -94,11 +139,9 @@ optimistically and the conflict is caught.
 
 That happens in the repository, not in the service. The insert sits in its own
 `transaction.atomic()` block, because Django marks a transaction as needing rollback once
-an `IntegrityError` escapes it and the next attempt would then fail with
-`TransactionManagementError`; the inner block is a savepoint that rolls back on its own.
-The repository turns the driver error into `CodeAlreadyExists`, so the service knows only
-that a code was taken and should draw another — which is also what lets it be tested
-without a database.
+an `IntegrityError` escapes it and the next attempt would fail with
+`TransactionManagementError` instead. The repository turns the driver error into
+`CodeAlreadyExists`, which is what lets the service be tested without a database.
 
 Attempts are capped at five. At this scale the retry path should never run, so the cap is
 not there for collisions but for my own mistakes: a broken generator would otherwise spin
@@ -176,3 +219,19 @@ classes, which carry no serializer attribute to infer from, so each one declares
 request and response shapes explicitly, error responses included. An end-to-end test
 requests the schema, because it is generated at runtime and a broken annotation would
 otherwise stay unnoticed until somebody opened the docs.
+
+
+## What I left out
+
+No authentication, no expiry, no custom aliases, no click statistics, no rate limiting.
+The requirements asked for a narrow feature set, and each of these is a product decision
+rather than a missing piece.
+
+At a scale where they mattered, the service would change in predictable ways. A shortener
+reads far more often than it writes, so the code-to-URL mapping would go behind a cache
+before anything else. A seven character code is guessable by brute force given enough
+requests, so the answer to scanning is a rate limiter, not a longer code. Click statistics
+would be an append-only table written asynchronously through a queue, never a counter
+updated inside the redirect, which has to stay fast. Deployments would replace the
+development server with a WSGI server and drop `--no-dev` into the image build. None of
+that is here, because none of it is justified by two endpoints.
