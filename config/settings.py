@@ -6,6 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-insecure-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "0") == "1"
 ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+SHORT_URL_BASE = os.environ.get("SHORT_URL_BASE", "http://localhost:8000").rstrip("/")
 
 INSTALLED_APPS = [
     "django.contrib.auth",

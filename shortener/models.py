@@ -2,10 +2,12 @@ from django.db import models
 
 from shortener.codes import CODE_LENGTH
 
+MAX_URL_LENGTH = 2048
+
 
 class Link(models.Model):
     code = models.CharField(max_length=CODE_LENGTH)
-    url = models.URLField(max_length=2048)
+    url = models.URLField(max_length=MAX_URL_LENGTH)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

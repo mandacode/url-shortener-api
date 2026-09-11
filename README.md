@@ -91,3 +91,32 @@ usable.
 Attempts are capped at five. At this scale the retry path should never run, so the cap is
 not there for collisions but for my own mistakes: a broken generator would otherwise spin
 forever instead of surfacing.
+
+### The short domain comes from configuration, not from the request
+
+`short_url` is built from a `SHORT_URL_BASE` setting rather than from
+`request.build_absolute_uri()`. In a real deployment the short domain is not the API
+domain: the API might live on `api.example.com` while links go out as `exmpl.link/abc123`,
+which is the entire point of a shortener. Building the value from the incoming request
+would tie it permanently to whichever host the request arrived on, and the `Host` header
+is client-supplied and often rewritten by a proxy.
+
+### Only http and https are accepted
+
+The input is a `CharField` with an explicit `URLValidator(schemes=["http", "https"])`
+rather than DRF's `URLField`, whose default validator also allows `ftp` and `ftps`.
+A shortener is a machine for redirecting people, so the set of schemes it will emit
+belongs in an allowlist I wrote down, not in a framework default.
+
+### Both endpoints return the same link representation
+
+A link is `code`, `short_url` and `url`, and both endpoints return that shape.
+`short_url` is there so that clients never need to know the path structure: if `/shrt/`
+ever changes, a client using the returned value keeps working while one that builds the
+address from the code breaks. `code` is the stable identifier a client stores and passes
+back to the API, so it never has to be parsed out of a string.
+
+Expanding arguably only needs `url`, since the caller already supplied the code in the
+path. I kept one representation anyway: a single serializer is less code than two, clients
+parse the same shape whichever endpoint they call, and the OpenAPI schema carries one
+model instead of two nearly identical ones. The redundant fields cost a few hundred bytes.
