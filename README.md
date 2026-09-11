@@ -132,3 +132,15 @@ Following one returns `302`, not `301`. A `301` is cached by the browser forever
 clicks would never reach the service again - ruling out click statistics and deactivating
 a link. The route sits at `/shrt/{code}`, outside `/api/` and without a trailing slash,
 because every character in a short link is the point.
+
+### Unit tests run without a database
+
+`tests/unit` exercises the service against an in-memory repository: no container, no
+database, no fixtures, well under a second. Writing them is what exposed the leak the
+refactor fixed - `transaction.atomic()` opens a connection on entry, so a service holding
+its own transaction could never have been tested this way.
+
+The collision path is covered by a repository that refuses the first N codes. A real race
+cannot be tested reliably, since a threaded test passes or fails on timing, so it is split
+in two: the retry logic here, and the existence of the unique constraint in the
+end-to-end tests.

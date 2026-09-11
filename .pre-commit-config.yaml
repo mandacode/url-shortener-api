@@ -25,7 +25,7 @@ repos:
 
       - id: mypy
         name: mypy
-        entry: uv run mypy config shortener manage.py
+        entry: uv run mypy config shortener tests manage.py
         language: system
         types: [ python ]
         pass_filenames: false
