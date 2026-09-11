@@ -1,8 +1,10 @@
 from django.db import models
 
+from shortener.codes import CODE_LENGTH
+
 
 class Link(models.Model):
-    code = models.CharField(max_length=7)
+    code = models.CharField(max_length=CODE_LENGTH)
     url = models.URLField(max_length=2048)
     created_at = models.DateTimeField(auto_now_add=True)
 

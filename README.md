@@ -46,3 +46,20 @@ the field. On PostgreSQL, field-level uniqueness also creates a companion index 
 looked up by exact match, so that index would be maintained on every insert and never
 read. The constraint gives the same protection, raises the same `IntegrityError` on
 conflict, and carries a name I chose rather than a generated one.
+
+### Short codes are random, not derived from the primary key
+
+Codes are seven characters drawn from `[0-9a-zA-Z]` with `secrets`. I considered base62
+encoding of the auto-increment primary key, which cannot collide and yields the shortest
+possible codes. I rejected it: consecutive codes are guessable, so anyone could walk
+through other people's links and read off how many records the service holds, and Django
+only learns the primary key after the insert, so it would take an insert followed by an
+update.
+
+62^7 is roughly 3.5 * 10^12. With a million links stored, the chance that a given insert
+lands on a taken code is about one in 3.5 million. Collisions are handled rather than
+avoided: the unique constraint rejects the duplicate and the service draws again.
+
+`secrets` rather than `random` is load-bearing. `random` is deterministic and its state
+can be reconstructed from enough observed output, which would reintroduce exactly the
+predictability I rejected base62 to avoid.
