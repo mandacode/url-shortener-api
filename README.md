@@ -120,3 +120,13 @@ Expanding arguably only needs `url`, since the caller already supplied the code 
 path. I kept one representation anyway: a single serializer is less code than two, clients
 parse the same shape whichever endpoint they call, and the OpenAPI schema carries one
 model instead of two nearly identical ones. The redundant fields cost a few hundred bytes.
+
+### The service resolves short links itself
+
+"API only" I read as "no frontend", not "no redirect": without a route behind it, the
+`short_url` in every response would point at a 404.
+
+Following one returns `302`, not `301`. A `301` is cached by the browser forever, so later
+clicks would never reach the service again - ruling out click statistics and deactivating
+a link. The route sits at `/shrt/{code}`, outside `/api/` and without a trailing slash,
+because every character in a short link is the point.
