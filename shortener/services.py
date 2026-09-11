@@ -1,10 +1,8 @@
 import logging
 
-from django.db import IntegrityError, transaction
-
 from shortener.codes import generate_code
 from shortener.models import Link
-from shortener.repositories import LinkRepository
+from shortener.repositories import CodeAlreadyExists, LinkRepository
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +24,8 @@ class ShortenerService:
     def shorten(self, url: str) -> Link:
         for attempt in range(1, MAX_ATTEMPTS + 1):
             try:
-                # pre-check is racy; a shared atomic block dies on first IntegrityError
-                with transaction.atomic():
-                    return self._link_repository.add(generate_code(), url)
-            except IntegrityError:
+                return self._link_repository.add(generate_code(), url)
+            except CodeAlreadyExists:
                 logger.warning("short code collision on attempt %s", attempt)
         logger.error("no free short code after %s attempts", MAX_ATTEMPTS)
         raise CodeGenerationError
