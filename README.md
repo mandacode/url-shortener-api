@@ -235,6 +235,18 @@ and to no view at all. The service is built per request rather than held as a mo
 instance, which would be shared across threads and would quietly require everything
 beneath it to stay stateless forever.
 
+### Domain exceptions become status codes in one place
+
+`LinkNotFound` and `CodeGenerationError` carry no HTTP meaning and the API views no longer
+translate them. A custom DRF `EXCEPTION_HANDLER` holds the mapping, so a third domain
+exception is one entry in a dict rather than another `try` block in another view, and the
+error body cannot drift between endpoints. Anything the handler does not recognise falls
+through to DRF's default, which is what keeps validation errors answering 400.
+
+The redirect view keeps its own `try`, because it is a plain Django view that DRF's handler
+never sees. It answers an unknown code with an HTML 404 rather than a JSON body, which is
+the right shape for a route a browser follows.
+
 ## What I left out
 
 No authentication, no expiry, no custom aliases, no click statistics, no rate limiting.

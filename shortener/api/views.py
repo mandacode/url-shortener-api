@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 
 from shortener.api.serializers import LinkSerializer, ShortenRequestSerializer
 from shortener.mixins import ShortenerServiceMixin
-from shortener.services import CodeGenerationError, LinkNotFound
 
 
 class LinkCreateView(ShortenerServiceMixin, APIView):
@@ -21,13 +20,7 @@ class LinkCreateView(ShortenerServiceMixin, APIView):
     def post(self, request: Request) -> Response:
         serializer = ShortenRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            link = self.get_service().shorten(serializer.validated_data["url"])
-        except CodeGenerationError:
-            return Response(
-                {"detail": "Could not generate a unique short code, please retry."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
+        link = self.get_service().shorten(serializer.validated_data["url"])
         return Response(LinkSerializer(link).data, status=status.HTTP_201_CREATED)
 
 
@@ -39,11 +32,5 @@ class LinkDetailView(ShortenerServiceMixin, APIView):
         },
     )
     def get(self, request: Request, code: str) -> Response:
-        try:
-            link = self.get_service().expand(code)
-        except LinkNotFound:
-            return Response(
-                {"detail": "No link with this code."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        link = self.get_service().expand(code)
         return Response(LinkSerializer(link).data)
