@@ -8,11 +8,15 @@ ENV PYTHONUNBUFFERED=1 \
     UV_PROJECT_ENVIRONMENT=/opt/venv \
     PATH="/opt/venv/bin:$PATH"
 
+RUN useradd --create-home --uid 1000 app
+
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
-COPY . .
+COPY --chown=app:app . .
+
+USER app
 
 ENTRYPOINT ["./entrypoint.sh"]
