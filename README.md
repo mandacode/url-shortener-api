@@ -235,3 +235,7 @@ would be an append-only table written asynchronously through a queue, never a co
 updated inside the redirect, which has to stay fast. Deployments would replace the
 development server with a WSGI server and drop `--no-dev` into the image build. None of
 that is here, because none of it is justified by two endpoints.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
