@@ -221,6 +221,20 @@ requests the schema, because it is generated at runtime and a broken annotation 
 otherwise stay unnoticed until somebody opened the docs.
 
 
+### Views take their service from an overridable attribute
+
+The views inherit `ShortenerServiceMixin`, which holds `service_factory` as a class
+attribute and builds the service through `get_service()`. That is the shape Django and DRF
+use for their own dependencies, `serializer_class` beside `get_serializer_class()`, so a
+different service can be supplied per route with `as_view(service_factory=...)` without
+editing a view.
+
+What a service is made of still lives in one place, `build_shortener_service()` in
+`dependencies.py`. Putting a cache in front of the repository is a change to that function
+and to no view at all. The service is built per request rather than held as a module-level
+instance, which would be shared across threads and would quietly require everything
+beneath it to stay stateless forever.
+
 ## What I left out
 
 No authentication, no expiry, no custom aliases, no click statistics, no rate limiting.
